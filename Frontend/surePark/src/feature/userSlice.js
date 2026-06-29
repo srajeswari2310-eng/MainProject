@@ -1,25 +1,37 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const dummyCurrentUser = {
-  _id: "6a354a96a5e7afe118c4aa3b",
-  name: "Raji",
-  email: "raji@example.com",
-  password: "raji@123", // keep unhashed for testing
-  role: "admin",
-  vehicles: [ ],
-  favoriteSlot: [
-    
-  ],
-  reservedSlot: [
-    
-  ]
-};
+        "_id": "6a357456e86d05bdf0ea74c0",
+        "name": "Customer3",
+        "email": "user1@example.com",
+        "password": "$2b$10$uAfHF3o5IDfiMLLI7iAckOkIVP10pXZ19GYFFSFyA/y21xBbX363O",
+        "role": "user",
+        "vehicles": [
+            {
+                "no": "TN/07/AB/1236",
+                "_id": "6a36998ba25ec21e3bf4b980"
+            },
+            {
+                "no": "TN/07/AB/1237",
+                "_id": "6a369d14814d81fb8506259e"
+            },
+            {
+                "no": "TN/07/AB/1235",
+                "_id": "6a38e264fbef446f9f14eb85"
+            }
+        ],
+        "favoriteSlot": [],
+        "reservedSlot": [],
+        "createdAt": "2026-06-19T16:54:46.553Z",
+        "updatedAt": "2026-06-22T07:23:39.829Z",
+        "__v": 9
+    }
 
 const initialState = {
-  currentUser: dummyCurrentUser,
+  currentUser: null,
   token: null,
-  role: "admin",
-  isLoggedIn: true,
+  role: null,
+  isLoggedIn: false,
   loading: false,
   error: null,
   success: false,

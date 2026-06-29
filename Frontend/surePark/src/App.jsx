@@ -18,6 +18,8 @@ import UserDetails from './Pages/UserDetails';
 import UserProfile from './Pages/UserProfile';
 import ManageVehicle from './Pages/ManageVehicle';
 import { User } from 'lucide-react';
+import ManageLot from './Pages/ManageLot';
+import ParkingLot from './Pages/ParkingLot';
 
 const router = createBrowserRouter([
   {
@@ -74,6 +76,21 @@ const router = createBrowserRouter([
         path: "/vehicles",
         element: <UserRoute>
           <ManageVehicle/>
+        </UserRoute>
+
+      }
+      ,
+        {
+        path: "/manageSlot",
+        element: <AdminRoute>
+          <ManageLot/>
+        </AdminRoute>
+
+      },
+        {
+        path: "/parking",
+        element: <UserRoute>
+          <ParkingLot/>
         </UserRoute>
 
       }

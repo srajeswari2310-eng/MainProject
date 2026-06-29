@@ -2,7 +2,10 @@ const mongoose = require("mongoose");
 
 // ✅ Slot Schema
 const slotSchema = new mongoose.Schema({
-  slotName: { type: String, required: true },
+  slotName: { 
+    type: String, 
+    required: true,    
+  },
   occupied: { type: Boolean, default: false },
   user: { type: String, default: null },
   userVehicleNo: { type: String, default: null },
@@ -19,12 +22,17 @@ const slotSchema = new mongoose.Schema({
     },
   ],
   occupiedDt: { type: Date, default: null },
+  available: { type: Boolean, default: true },
 });
 
 // ✅ Floor Schema
 const floorSchema = new mongoose.Schema({
-  name: { type: String, required: true }, // e.g. "Floor 1"
-  slots: [slotSchema], // Embed slots
+  name: { 
+    type: String, 
+    required: true,    
+  },
+  slots: [slotSchema],
+  available: { type: Boolean, default: true },
 });
 
 // ✅ Parking Location Schema
@@ -35,7 +43,8 @@ const parkingSchema = new mongoose.Schema(
       type: [Number], // [latitude, longitude]
       required: true,
     },
-    floors: [floorSchema], // Embed floors
+    floors: [floorSchema],
+    available: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

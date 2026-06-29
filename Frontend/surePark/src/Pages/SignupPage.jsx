@@ -1,6 +1,6 @@
 import React from "react";
 import logo from "../assets/logo.png";
-import { FaApple, FaGoogle  } from "react-icons/fa";    // Apple icon
+import { FaApple, FaGoogle } from "react-icons/fa";    // Apple icon
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useDispatch, useSelector } from "react-redux";
@@ -13,6 +13,8 @@ import {
   registerFailure,
 } from "../feature/userSlice";
 
+import {registerService } from '../services/auth.service'
+
 const SignupPage = () => {
   // Validation schema
   const validationSchema = Yup.object({
@@ -23,8 +25,8 @@ const SignupPage = () => {
       required("Email is required"),
     password: Yup.string().
       min(6, "Password must be at least 6 characters")
-       .matches(/^(?=.*[!@#$%^&*(),.?":{}|<>])/,
-      "Password must contain at least one special character")
+      .matches(/^(?=.*[!@#$%^&*(),.?":{}|<>])/,
+        "Password must contain at least one special character")
       .required("Password is required"),
     confirmPassword: Yup.string()
       .oneOf([Yup.ref("password"), null], "Passwords must match")
@@ -44,42 +46,37 @@ const SignupPage = () => {
   const { error, users, success } = useSelector((state) => state.user);
 
   const onSubmit = async (values, { setSubmitting }) => {
-     dispatch(registerStart());
+  dispatch(registerStart());
   try {
-    console.log(values);
-    const res = await axios.post("http://localhost:4000/register", {
-       name: values.name,
-      email: values.email,     
-      password: values.password,
-    });    
+    const data = await registerService(values.name, values.email, values.password);
 
-    if (res.data.success) {
-      dispatch(registerSuccess(res.data));
-      //resetForm();
-      alert(res.data.message);
+    if (data.success) {
+      dispatch(registerSuccess(data));
+      alert(data.message);
     } else {
-      dispatch(registerFailure(res.data.message || "Registration failed"));
-      alert(res.data.message || "Registration failed");
+      const errorMsg = data.message || "Registration failed";
+      dispatch(registerFailure(errorMsg));
+      alert(errorMsg);
     }
-  } catch (err) {
-    dispatch(registerFailure(err.message || "Registration failed"));
-    alert(err.message || "Registration failed");
+  } catch (error) {
+    dispatch(registerFailure(error.message));
+    alert(error.message);
   } finally {
     setSubmitting(false);
   }
-  };
+};
 
-  const handleLogin = (e) =>{
-     e.preventDefault();
-        navigate("/"); // navigate programmatically
+  const handleLogin = (e) => {
+    e.preventDefault();
+    navigate("/"); // navigate programmatically
   }
 
-  useEffect(()=>{
-    console.log(users,error);
-    if(success == true ){
+  useEffect(() => {
+    console.log(users, error);
+    if (success == true) {
       navigate('/');
     }
-  },[users, error, success])
+  }, [users, error, success])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-radial from-orange-300 from-20% to-white">
@@ -137,9 +134,9 @@ const SignupPage = () => {
                 <ErrorMessage name="confirmPassword" component="div" className="text-red-500 text-sm mt-1" />
               </div>
 
-               {error && (
-                                    <div className="text-red-500 text-sm">{error}</div>
-                                )}
+              {error && (
+                <div className="text-red-500 text-sm">{error}</div>
+              )}
 
               <button
                 type="submit"

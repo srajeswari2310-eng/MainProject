@@ -8,43 +8,54 @@ const authorizeRoles = require("../middleware/role.Middleware");
 
 // Parking CRUD
 router.post("/",
-    verifyToken,
-    authorizeRoles("admin"),
-     parkingController.createParking);
-router.get("/", 
      verifyToken,
-    authorizeRoles("admin","user"),
-    parkingController.getParkings);
+     authorizeRoles("admin"),
+     parkingController.createParking);
+router.get("/",
+     verifyToken,
+     authorizeRoles("admin","user"),
+     parkingController.getParkings);
 
 router.get("/:id",
      verifyToken,
-    authorizeRoles("admin","user"),
+     authorizeRoles("admin", "user"),
      parkingController.getParkingById);
 router.put("/:id",
      verifyToken,
-    authorizeRoles("admin"),
+     authorizeRoles("admin"),
      parkingController.updateParking);
 
 router.delete("/:id",
      verifyToken,
-    authorizeRoles("admin"),
+     authorizeRoles("admin"),
      parkingController.deleteParking);
 
 // Floors
-router.post("/:id/floors", 
+router.post("/:id/floors",
      verifyToken,
-    authorizeRoles("admin"),
-    parkingController.addFloor);
+     authorizeRoles("admin"),
+     parkingController.addFloor);
+
+router.put("/:parkingId/floors/:floorId/availability",
+      verifyToken,
+     authorizeRoles("admin"),
+      parkingController.toggleFloorAvailability);
 
 // Slots
 router.post("/:id/floors/:floorId/slots",
      verifyToken,
-    authorizeRoles("admin"),
+     authorizeRoles("admin"),
      parkingController.addSlot);
-
-router.put("/:id/floors/:floorId/slots/:slotId", 
+// 10 Slots
+router.post("/:id/floors/:floorId/10slots",
      verifyToken,
-    authorizeRoles("admin","user"),
-    parkingController.updateSlot);
+     authorizeRoles("admin"),
+     parkingController.add10Slot);
+
+router.put("/:id/floors/:floorId/slots/:slotId",
+     verifyToken,
+     authorizeRoles("admin", "user"),
+     parkingController.updateSlot);
 
 module.exports = router;
+

@@ -2,138 +2,120 @@ const bcrypt = require('bcryptjs');
 const jwt = require("jsonwebtoken");
 const userModel = require('../models/users.model');
 
-//method: POST
-//process: User registration
-//route public route
+// ✅ Register User
+const registerUser = async (req, res, next) => {
+  try {
+    const { name, email, password, role } = req.body;
 
-const registerUser = async(req, res, next) => {
-    try{
-        const { name, email, password, role } = req.body;
-
-        const userExist = await userModel.findOne({email});
-
-        if(userExist) {
-            return res.json({
-                success: false,
-                message : "User already exist"
-            });
-        }
-
-        const hasedPwd = await bcrypt.hash(password, 10);
-
-        const newUser = new userModel({
-            name,
-            email,
-            password: hasedPwd,
-            role
-        });
-
-        await newUser.save();
-
-        res.status(200).json({
-            success: true,
-            message : "User Created successfully"
-        });
-
-    }catch(err) {
-        next(err);
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
     }
-}
 
-//method: Post
-//process: login user and get JWT token
-//route public 
-
-const loginUser = async (req,res) => {
-    try{
-        const {email, password} = req.body;
-
-        const user = await userModel.findOne({email});
-        
-        if(!user) {
-            return res.status(404).json({
-                success: false,
-                message : "User not found"
-            });
-        }
-
-        const isPwdMatch = await bcrypt.compare(password, user.password);
-        
-        if(!isPwdMatch) {
-             return res.status(500).json({
-                success: false,
-                message : "Invalid Password"
-            });
-        };
-
-        const token = await jwt.sign(
-            {
-                id: user._id,
-                role: user.role
-            },
-            process.env.JWT_SECRET,
-            {
-                expiresIn: "1h"
-            }
-        );
-
-        res.status(200).json({
-            success: true,
-            message: "User LoggedIn",
-            token,
-            user: user
-        });
-    } catch(err) {
-       next(err);
+    const userExist = await userModel.findOne({ email });
+    if (userExist) {
+      return res.status(409).json({ success: false, message: "User already exists" });
     }
-}
 
+    const hashedPwd = await bcrypt.hash(password, 10);
 
-// ✅ Forgot Password (generate 6-digit OTP)
+    const newUser = new userModel({ name, email, password: hashedPwd, role });
+    await newUser.save();
+
+    res.status(201).json({ success: true, message: "User created successfully" });
+  } catch (err) {
+    console.error("Register Error:", err.message);
+    res.status(500).json({ success: false, message: "Server error during registration" });
+  }
+};
+
+// ✅ Login User
+const loginUser = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: "Email and password are required" });
+    }
+
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const isPwdMatch = await bcrypt.compare(password, user.password);
+    if (!isPwdMatch) {
+      return res.status(401).json({ success: false, message: "Invalid password" });
+    }
+
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: user
+    });
+  } catch (err) {
+    console.error("Login Error:", err.message);
+    res.status(500).json({ success: false, message: "Server error during login" });
+  }
+};
+
+// ✅ Forgot Password (generate OTP)
 const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
 
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
     const user = await userModel.findOne({ email });
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
 
     // In production: send OTP via email/SMS
     res.status(200).json({
       success: true,
-      changeUser: user,
       message: "OTP generated successfully",
-      otp, 
+      otp,
+      userId: user._id
     });
   } catch (err) {
-    next(err);
+    console.error("Forgot Password Error:", err.message);
+    res.status(500).json({ success: false, message: "Server error during OTP generation" });
   }
 };
 
-// ✅ Reset Password (verify OTP)
+// ✅ Reset Password
 const resetPassword = async (req, res, next) => {
   try {
     const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ success: false, message: "Email and new password are required" });
+    }
 
     const user = await userModel.findOne({ email });
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Update password
     const hashedPwd = await bcrypt.hash(newPassword, 10);
     user.password = hashedPwd;
-
     await user.save();
 
     res.status(200).json({ success: true, message: "Password reset successful" });
   } catch (err) {
-    next(err);
+    console.error("Reset Password Error:", err.message);
+    res.status(500).json({ success: false, message: "Server error during password reset" });
   }
 };
 

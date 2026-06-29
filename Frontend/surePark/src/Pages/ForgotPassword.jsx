@@ -5,21 +5,23 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useEffect } from 'react';
 import axios from "axios";
-import {useNavigate} from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
+import { forgotPasswordService, resetPasswordService } from "../services/auth.service";
 
 //calling slice
-import { confirmOtp,setForgotState,
+import {
+  confirmOtp, setForgotState,
   forgotPwdStart,
   forgotPwdFailure,
   forgotPwdSuccess,
   changePwdStart,
   changePwdSuccess,
   changesPwdFailure,
- } from '../feature/userSlice';
+} from '../feature/userSlice';
 
 const ForgotPassword = () => {
-    const dispatch = useDispatch();
-    const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { generatedOtp, step, error, success, userChange } = useSelector((state) => state.user);
 
   // Validation schemas for each step
@@ -35,81 +37,84 @@ const ForgotPassword = () => {
 
   const changeSchema = Yup.object({
     newPwd: Yup.string().min(6, "Password must be at least 6 characters")
-    .matches(
-      /^(?=.*[!@#$%^&*(),.?":{}|<>])/,
-      "Password must contain at least one special character"
-    ).
-    required("Required"),
+      .matches(
+        /^(?=.*[!@#$%^&*(),.?":{}|<>])/,
+        "Password must contain at least one special character"
+      ).
+      required("Required"),
     confirmNewPwd: Yup.string()
       .oneOf([Yup.ref("newPwd"), null], "Passwords must match")
       .required("Required"),
   });
 
   // Forgot Password (send OTP)
-const handleForgotSubmit = async (values, { setSubmitting }) => {
+ const handleForgotSubmit = async (values, { setSubmitting }) => {
   dispatch(forgotPwdStart());
   try {
-    const res = await axios.post("http://localhost:4000/forgot-password", { email: values.email });
-    if (res.data.success) {
-      dispatch(forgotPwdSuccess({ user: res.data.changeUser, otp: res.data.otp }));
-     // alert(res.data.message);
+    const data = await forgotPasswordService(values.email);
+
+    if (data.success) {
+      dispatch(forgotPwdSuccess({ user: data.changeUser, otp: data.otp }));
+      // alert(data.message); // optional
     } else {
-      dispatch(forgotPwdFailure(res.data.message || "Failed to send OTP"));
-      alert(res.data.message || "Failed to send OTP");
+      const errorMsg = data.message || "Failed to send OTP";
+      dispatch(forgotPwdFailure(errorMsg));
+      alert(errorMsg);
     }
-  } catch (err) {
-    dispatch(forgotPwdFailure(err.message || "Failed to send OTP"));
-    alert(err.message || "Failed to send OTP");
+  } catch (error) {
+    dispatch(forgotPwdFailure(error.message));
+    alert(error.message);
   } finally {
     setSubmitting(false);
   }
 };
 
-//Confirm Otp
+  //Confirm Otp
   const handleConfirmSubmit = (values, { setSubmitting }) => {
     console.log("Confirm OTP:", values.otp);
-    dispatch(confirmOtp({otp: values.otp}));
+    dispatch(confirmOtp({ otp: values.otp }));
     setSubmitting(false);
   };
 
-// Change Password
-const handleChangeSubmit = async (values, { setSubmitting }) => {
+  // Change Password
+  const handleChangeSubmit = async (values, { setSubmitting }) => {
   dispatch(changePwdStart());
   try {
-    console.log(userChange)
-    const res = await axios.post("http://localhost:4000/reset-password", { email: userChange.email , newPassword: values.newPwd  });
-    if (res.data.success) {
-      dispatch(changePwdSuccess(res.data));
-      //alert(res.data.message);
+    const data = await resetPasswordService(userChange.email, values.newPwd);
+
+    if (data.success) {
+      dispatch(changePwdSuccess(data));
+      // alert(data.message); // optional
     } else {
-      dispatch(changesPwdFailure(res.data.message || "Password change failed"));
-      alert(res.data.message || "Password change failed");
+      const errorMsg = data.message || "Password change failed";
+      dispatch(changePwdFailure(errorMsg));
+      alert(errorMsg);
     }
-  } catch (err) {
-    dispatch(changesPwdFailure(err.message || "Password change failed"));
-    alert(err.message || "Password change failed");
+  } catch (error) {
+    dispatch(changePwdFailure(error.message));
+    alert(error.message);
   } finally {
     setSubmitting(false);
   }
 };
 
-  const handleLogin = (e) =>{
-     e.preventDefault();
-     dispatch(setForgotState());
-        navigate("/"); // navigate programmatically
+  const handleLogin = (e) => {
+    e.preventDefault();
+    dispatch(setForgotState());
+    navigate("/"); // navigate programmatically
   }
 
   useEffect(() => {
     console.log(success);
-    if(success){
-       dispatch(setForgotState());
-        navigate("/"); // navigate programmatically
+    if (success) {
+      dispatch(setForgotState());
+      navigate("/"); // navigate programmatically
     }
   }, [generatedOtp, error, success, step]);
 
 
-    return (
-         <div className="min-h-screen flex items-center justify-center bg-radial from-orange-300 from-20% to-white">
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-radial from-orange-300 from-20% to-white">
       <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
         {/* Forgot Password Step */}
         {step === "forgot" && (
@@ -165,14 +170,14 @@ const handleChangeSubmit = async (values, { setSubmitting }) => {
         {/* Confirm OTP Step */}
         {step === "confirm" && (
           <>
-          <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-6">
               <img src={logo} alt="SurePark Logo" className="h-16 w-auto object-contain" />
             </div>
             <h1 className="text-2xl font-bold mb-4">Confirm OTP</h1>
 
-              <p className="text-sm text-gray-600 mb-4">
-                            Your OTP: <span className="font-semibold">{generatedOtp}</span>
-                            </p>
+            <p className="text-sm text-gray-600 mb-4">
+              Your OTP: <span className="font-semibold">{generatedOtp}</span>
+            </p>
             <Formik
               initialValues={{ otp: "" }}
               validationSchema={confirmSchema}
@@ -180,7 +185,7 @@ const handleChangeSubmit = async (values, { setSubmitting }) => {
             >
               {({ isSubmitting }) => (
                 <Form className="space-y-4">
-                
+
                   <Field
                     type="text"
                     name="otp"
@@ -216,7 +221,7 @@ const handleChangeSubmit = async (values, { setSubmitting }) => {
         {/* Change Password Step */}
         {step === "change" && (
           <>
-          <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-6">
               <img src={logo} alt="SurePark Logo" className="h-16 w-auto object-contain" />
             </div>
             <h1 className="text-2xl font-bold mb-4">Change Password</h1>
@@ -268,7 +273,7 @@ const handleChangeSubmit = async (values, { setSubmitting }) => {
         )}
       </div>
     </div>
-    );
+  );
 
 
 

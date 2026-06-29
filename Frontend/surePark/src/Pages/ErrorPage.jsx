@@ -1,43 +1,39 @@
-import React from 'react'
+import React from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-//import { reset } from '../feature/parkingSlice';
-import { current } from '@reduxjs/toolkit';
 import { logout } from '../feature/userSlice';
 
 const ErrorPage = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
+  const handleLogin = (e) => {
+    e.preventDefault();
+    dispatch(logout());
+    navigate("/"); 
+  };
 
-    const handleLogin = (e) =>{
-         e.preventDefault();
-         // dispatch(reset({currentUser:null}));
-             dispatch(logout());
-        
-            navigate("/"); // navigate programmatically
-           
-      }
   return (
-    <>
-               <div className="min-h-screen bg-gray-50 flex flex-col items-center px-4 py-10">
-   
-                   {/* Heading */}
-                   <div className="text-start max-w-3xl mx-auto p-10">
-                       <h2 className="text-3xl md:text-5xl font-bold text-red-500">
-                          No such file Please go back to Home
-                       </h2>
+    <div className="min-h-screen bg-gradient-to-r from-orange-100 via-pink-100 to-teal-100 flex items-center justify-center px-6">
+      <div className="bg-white shadow-xl rounded-2xl p-10 text-center max-w-lg w-full">
+        {/* Heading */}
+        <h2 className="text-2xl md:text-3xl font-semibold text-red-600 mb-6">
+          Oops! Page Not Found
+        </h2>
+        <p className="text-gray-600 mb-8">
+          The file you’re looking for doesn’t exist. Please go back to Home.
+        </p>
 
-                         <button onClick={handleLogin} className="text-blue-600 hover:underline">
-                Back to Login
-              </button>
-   
-                   </div>
-   
-                
-               </div>
-           </>
-  )
-}
+        {/* Action Button */}
+        <button
+          onClick={handleLogin}
+          className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-6 py-2 rounded-lg shadow hover:opacity-90 transition"
+        >
+          Back to Login
+        </button>
+      </div>
+    </div>
+  );
+};
 
-export default ErrorPage
+export default ErrorPage;

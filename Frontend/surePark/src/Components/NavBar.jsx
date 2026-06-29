@@ -32,21 +32,21 @@ const NavBar = ({ onScrollToAbout, onScrollToHow, onScrollToPrice }) => {
       ? [
           { name: "About", action: onScrollToAbout, type: "button" },
           ...( !isAdmin ? [
-            { name: "How It Works", action: onScrollToHow, type: "button" },
-            { name: "Our Plan", action: onScrollToPrice, type: "button" },
+            { name: "Flow", action: onScrollToHow, type: "button" },
+            { name: "Services", action: onScrollToPrice, type: "button" },
           ] : [])
         ]
       : []),
     ...(isAdmin
-      ? [{ name: 'Manage Lot', to: 'manageSlot', type: 'link' },
-        { name: 'Manage Users', to: 'user', type: 'link' }
+      ? [{ name: 'Parking', to: 'manageSlot', type: 'link' },
+        { name: 'Users', to: 'user', type: 'link' }
 
       ]
       : [
           { name: 'Contact Us', to: 'contact', type: 'link' },
           ...(currentUser?.vehicles?.length > 0
-            ? [{ name: 'Find Lot', to: 'parking', type: 'link' }]
-            : [{ name: 'Add Vehicle', to: 'vehicles', type: 'link' }])
+            ? [{ name: 'Park', to: 'parking', type: 'link' }]
+            : [{ name: 'Vehicles', to: 'vehicles', type: 'link' }])
         ]),
     ...(isMenuOpen
       ? [

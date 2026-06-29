@@ -1,4 +1,5 @@
 import React from 'react'
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
 import loginParking from '../assets/loginParking.jpg'
 import logo from '../assets/logo.png'
@@ -14,26 +15,37 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from 'react';
 import {
-  loginStart,
-  loginSuccess,
-  loginFailure,
+    loginStart,
+    loginSuccess,
+    loginFailure,
 } from "../feature/userSlice";
 import { resetUserError } from '../feature/userSlice';
+import { loginApi } from '../services/auth.service';
 import axios from "axios";
 
 
 const LoginPage = () => {
+    const YOUR_GOOGLE_CLIENT_ID = "1015281689846-1u3ntohgacm9op3b1pqo0vghd9u11m5s.apps.googleusercontent.com"
 
-   
+
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
-    const { error, currentUser, isLoggedIn  } = useSelector((state) => state.user);
+    const { error, currentUser, isLoggedIn } = useSelector((state) => state.user);
 
+     const handleGoogleSuccess = (credentialResponse) => {
+        const decoded = jwt_decode(credentialResponse.credential);
+        console.log("Google user:", decoded);
+        // You can now send decoded info (email, name, etc.) to your backend
+    };
+
+    const handleGoogleError = () => {
+        console.log("Google Sign-In failed");
+    };
 
 
     const handleForgotPassword = (e) => {
-        
+
         e.preventDefault();
         dispatch(resetUserError());
         navigate("/forgotPassword"); // navigate programmatically
@@ -52,9 +64,9 @@ const LoginPage = () => {
             .required("Email is required"),
         password: Yup.string()
             .min(6, "Password must be at least 6 characters")
-            .matches( /^(?=.*[!@#$%^&*(),.?":{}|<>])/,
-      "Password must contain at least one special character"
-    )
+            .matches(/^(?=.*[!@#$%^&*(),.?":{}|<>])/,
+                "Password must contain at least one special character"
+            )
             .required("Password is required"),
     });
 
@@ -64,43 +76,43 @@ const LoginPage = () => {
         remember: false,
     };
 
-  const onSubmit = async (values, { setSubmitting }) => {
-  dispatch(loginStart());
-  try {
-    const res = await axios.post("http://localhost:4000/login", {
-      email: values.email,
-      password: values.password,
-    });
+    const onSubmit = async (values, { setSubmitting }) => {
+        dispatch(loginStart());
+        try {
+            const data = await loginApi(values.email, values.password);
 
-    if (res.data.token) {
-      dispatch(loginSuccess({ user: res.data.user, token: res.data.token }));
-      alert(res.data.message);
-      navigate("/home");
-    } else {
-      dispatch(loginFailure(res.data.message));
-      alert(res.data.message || "Login failed");
-    }
-  } catch (err) {
-    dispatch(loginFailure(err.message || "Login failed"));
-    alert(err.message || err.message);
-  } finally {
-    setSubmitting(false);
-  }
-};
+            if (data?.success) {
+                dispatch(loginSuccess({ user: data.user, token: data.token }));
+                alert(data.message || "Login successful");
+                navigate("/home");
+            } else {
+                const errorMsg = data?.message || "Login failed";
+                dispatch(loginFailure(errorMsg));
+                alert(errorMsg);
+            }
+        } catch (error) {
+            console.error("Login Error:", error.message);
+            dispatch(loginFailure(error.message));
+            alert(error.message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
-    useEffect(()=>{
-        if(isLoggedIn == true)
-        {
+
+    useEffect(() => {
+        if (isLoggedIn == true) {
             console.log(currentUser);
             dispatch(resetUserError());
             navigate("/home"); // redirect after login
 
         }
 
-    },[error,isLoggedIn,currentUser])
+    }, [error, isLoggedIn, currentUser])
 
 
     return (
+         <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
         <div className="min-h-screen flex">
             {/* Left side - promo */}
             <div
@@ -271,10 +283,15 @@ const LoginPage = () => {
 
                     <div className="mt-6 text-center text-gray-500">OR CONTINUE WITH</div>
                     <div className="flex justify-center gap-4 mt-4">
-                        <button className="flex-1 border rounded-lg py-2 flex items-center justify-center gap-2 hover:bg-orange-500">
-                            <FcGoogle className="h-5 w-5" />
-                            <span>Google</span>
-                        </button>
+                        <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={handleGoogleError}
+                                shape="rectangular"
+                                theme="outline"
+                                text="signin_with"
+                                width="100%"
+                            />
+                         
                         <button className="flex-1 border rounded-lg py-2 flex items-center justify-center gap-2 hover:bg-orange-500">
                             <FaApple className="h-5 w-5 text-black" />
                             <span>Apple</span>
@@ -290,6 +307,7 @@ const LoginPage = () => {
                 </div>
             </div>
         </div>
+        </GoogleOAuthProvider>
     )
 }
 

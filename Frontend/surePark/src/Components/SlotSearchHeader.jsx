@@ -1,243 +1,223 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { reserveSlot, reset, setError, setIntialValues, setSelectedEndDate, setSelectedEndTime, setSelectedLocation, setSelectedParking, setSelectedPlan, setSelectedStartDate, setSelectedStartTime, setSelectedVehicleNo } from '../feature/parkingSlice';
-import { insertReservation } from '../feature/userSlice';
-import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import {
+  reserveSlot,
+  reset,
+  setError,
+  setIntialValues,
+  setSelectedEndDate,
+  setSelectedEndTime,
+  setSelectedLocation,
+  setSelectedParking,
+  setSelectedPlan,
+  setSelectedStartDate,
+  setSelectedStartTime,
+  setSelectedVehicleNo,
+  setParkings
+} from '../feature/parkingSlice';
 
-const SlotSearchHeader = ({onReserve}) => {
+const SlotSearchHeader = ({ onReserve }) => {
+  const dispatch = useDispatch();
+  const { currentUser, token } = useSelector((state) => state.user);
+  const {
+    parkings,
+    selectedLocation,
+    selectedParking,
+    selectedVehicleNo,
+    selectedPlan,
+    selectedStartDate,
+    selectedEndDate,
+    selectedStartTime,
+    selectedEndTime,
+    parkingError,
+    isSuccess
+  } = useSelector((state) => state.parking);
 
-   const {currentUser} = useSelector((state) => state.user); // Redux selector
-   const {parkings, selectedLocation, selectedVehicleNo, selectedPlan,
-    selectedStartDate,selectedEndDate,selectedStartTime,selectedEndTime,parkingError, isSuccess, reservationDetails, isPayment
-   } = useSelector((state) => state.parking); // Redux selector
+  const axiosInstance = axios.create({
+    baseURL: "http://localhost:4000",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
 
-
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-
-  
-
-   const dispatch = useDispatch();
-   
+  // Fetch parking data from API
+  useEffect(() => {
+    const fetchParkings = async () => {
+      try {
+        const res = await axiosInstance.get('/parking');
+        if (Array.isArray(res.data)) {
+          dispatch(setParkings({ parking: res.data }));
+          if (res.data.length > 0) {
+            dispatch(setSelectedLocation({ id: res.data[0]._id }));
+            // dispatch(setSelectedParking({ selectParking: res.data[0]._id }));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching parkings:', err.message);
+      }
+    };
+    fetchParkings();
+  }, []);
 
   const handleConfirm = (e) => {
     e.preventDefault();
-    
-    dispatch(reserveSlot({ currentUser }));    
+    dispatch(reserveSlot({ currentUser }));
   };
 
-// set selecting location
-  const handleLocation = (e) => {
-   e.preventDefault(); 
-   console.log(e.target.value);
-    dispatch(setSelectedLocation({location: e.target.value}));
-  }
-
-  //set selecting vehicle
-  const handleVehicle = (e) => {
-   e.preventDefault(); 
-    dispatch(setSelectedVehicleNo({vehicleNo: e.target.value}));
-  }
-
-  //set selecting plan
-  const handlPlan = (p) => {
-    dispatch(setSelectedPlan({plan: p}));
-  }
-
-   //set selecting SDate
-  const handleSDate = (e) => {
-    dispatch(setSelectedStartDate({sDate: e}));
-  }
-
-   //set selecting EDate
-  const handleEDate = (e) => {
-    dispatch(setSelectedEndDate({eDate: e}));
-  }
-
-    //set selecting STime
-  const handleSTime = (e) => {
-    e.preventDefault();     
-    dispatch(setSelectedStartTime({sTime: e.target.value}));
-  }
-
-   //set selecting EDate
-  const handleETime = (e) => {
-    e.preventDefault(); 
-    dispatch(setSelectedEndTime({eTime: e.target.value}));
-  }
-
-   //set selecting EDate
-  const hadleError = () => {
-    dispatch(setError());
-  }
-
-  const handleCancel= (e) =>{
-     e.preventDefault(); 
+  const handleCancel = (e) => {
+    e.preventDefault();
     dispatch(reset({ currentUser }));
-  }
+  };
 
-useEffect(() => {
-  if (currentUser) {   
-    
-     console.log(currentUser);
-    dispatch(setIntialValues({ currentUser }));    
-  }
-//}, [currentUser,isPayment, dispatch]);
-}, []);
-
-  useEffect(()=>{
-    if(selectedLocation){
-    dispatch(setSelectedParking({location: selectedLocation}));// use to set parking details for particular location
+  useEffect(() => {
+    if (currentUser) {
+      dispatch(setIntialValues({ currentUser }));
     }
-    if(isSuccess == true){
-      
-     onReserve();
+  }, [currentUser, dispatch]);
+
+
+  useEffect(() => {
+    // if (selectedLocation) {
+    //   dispatch(setSelectedParking({ location: selectedLocation }));
+    // }
+    console.log(selectedLocation)
+    console.log(selectedParking)
+
+    if (isSuccess) {
+      onReserve();
     }
-      console.log(currentUser);
-  },[selectedLocation, selectedVehicleNo, parkingError, isSuccess,currentUser])
+  }, [selectedLocation, selectedVehicleNo, parkingError, isSuccess, currentUser, dispatch, onReserve, selectedParking]);
 
-  
 
-  
-
-  
   return (
-   
-      <div className="w-full md:w-[80%] bg-orange-100 rounded-2xl mx-auto px-4 py-2 mt-4 mb-3 flex flex-col items-center">
-        {/* Heading */}
-       
-          <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r p-2 from-teal-500 via-orange-500 to-pink-500 bg-clip-text text-transparent">
-            Vehicle Reservation
-          </h2>
-         
+    <div className="w-full md:w-[85%] bg-gradient-to-r from-orange-50 via-pink-50 to-teal-50 rounded-xl mx-auto px-6 py-6 mt-6 mb-6 shadow-md">
+      <h2 className="text-xl md:text-2xl font-bold text-center bg-gradient-to-r from-teal-500 via-orange-500 to-pink-500 bg-clip-text text-transparent mb-6">
+        Vehicle Reservation
+      </h2>
 
-        <div className="flex flex-col lg:flex-row items-center gap-10 items-center justify-center">
-        {/* Location Selection */}
-        <div className="mb-8">
-          <h3 className="text-2xl font-semibold mb-4">Select Location</h3>
+      {/* Selection Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Location */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Select Location</h3>
           <select
-            value={selectedLocation}
-            onChange={(e) => handleLocation(e)}
-            className="border p-2 rounded w-full"
+            value={selectedLocation || ''}
+            onChange={(e) => dispatch(setSelectedLocation({ id: e.target.value }))}
+            className="border border-gray-300 p-2 rounded-md w-full text-sm focus:ring-2 focus:ring-orange-400"
           >
-            {parkings.map((parking,i) => (
-                <option key={i} value={parking.locationId}>{parking.location}</option>
-
-            ))}           
+            {parkings?.length > 0 ? (
+              parkings.map((parking) => (
+                <option key={parking._id} value={parking._id}>
+                  {parking.location}
+                </option>
+              ))
+            ) : (
+              <option disabled>No locations available</option>
+            )}
           </select>
         </div>
 
-        {/* Vehicle Selection */}
-        <div className="mb-8">
-          <h3 className="text-2xl font-semibold mb-4">Vehicle Selection</h3>
+        {/* Vehicle */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Select Vehicle</h3>
           <select
-            value={selectedVehicleNo}
-            onChange={(e) => handleVehicle(e)}
-            className="border p-2 rounded w-full"
+            value={selectedVehicleNo || ''}
+            onChange={(e) => dispatch(setSelectedVehicleNo({ vehicleNo: e.target.value }))}
+            className="border border-gray-300 p-2 rounded-md w-full text-sm focus:ring-2 focus:ring-orange-400"
           >
-            {currentUser.vehicles.map((vehc,i) => (
-                <option key={i} value={vehc.no}>{vehc.no}</option>
-
-            ))}  
+            {currentUser?.vehicles?.map((vehc, i) => (
+              <option key={i} value={vehc.no}>{vehc.no}</option>
+            ))}
           </select>
         </div>
 
-        {/* Plan Selection */}
-          <div className="mb-8">
-            <h3 className="text-2xl font-semibold mb-4">Reservation Plan</h3>
-            <div className="flex gap-4 overflow-x-auto">
-              {['shortTerm','longTerm','monthly'].map(p => (
-                <button
-                  key={p}
-                  onClick={() => handlPlan(p)}
-                  className={`px-6 py-3 rounded-lg shadow ${selectedPlan === p ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-700'} hover:scale-105 transition`}
-                >
-                  {p === 'shortTerm' ? 'Short-Term' : p === 'longTerm' ? 'Long-Term' : 'Monthly'}
-                </button>
-              ))}
-            </div>
+        {/* Plan */}
+        <div className="bg-white rounded-lg shadow p-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Reservation Plan</h3>
+          <div className="flex gap-2">
+            {['shortTerm', 'longTerm', 'monthly'].map((p) => (
+              <button
+                key={p}
+                onClick={() => dispatch(setSelectedPlan({ plan: p }))}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium shadow transition 
+                  ${selectedPlan === p ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+              >
+                {p === 'shortTerm' ? 'Short-Term' : p === 'longTerm' ? 'Long-Term' : 'Monthly'}
+              </button>
+            ))}
           </div>
         </div>
+      </div>
 
-       
-
-        {/* Horizontal Selection */}
-        <div className="flex flex-col lg:flex-row gap-6 mb-2 items-center justify-center" > 
-        {/* Time/Date Pickers */}
-
-        {selectedPlan != "" && (        
-          <div>
-            <h3 className="text-xl font-semibold mb-2">Select {selectedPlan === "shortTerm" ? "Date" : "Start Date"}</h3>
-             <div className="flex flex-col lg:flex-row items-center gap-4">
+      {/* Date & Time */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {selectedPlan && (
+          <div className="bg-white rounded-lg shadow p-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">
+              {selectedPlan === 'shortTerm' ? 'Select Date' : 'Start Date'}
+            </h3>
             <input
               type="date"
-              value={selectedStartDate}              
-              onChange={(e) => handleSDate(e.target.value)}
-              className="border p-2 rounded w-full mb-4"
+              value={selectedStartDate || ''}
+              onChange={(e) => dispatch(setSelectedStartDate({ sDate: e.target.value }))}
+              className="border border-gray-300 p-2 rounded-md w-full text-sm focus:ring-2 focus:ring-orange-400"
             />
-            </div>
           </div>
-        )}
-          {selectedPlan === "shortTerm" && (
-          <>
-          <div>
-            <h3 className="text-xl font-semibold mb-2">Select Time Range</h3>
-             <div className="flex flex-col lg:flex-row items-center gap-4">
-            <input
-              type="time"
-              value={selectedStartTime}
-              onChange={(e) => handleSTime(e)}
-              className="border p-2 rounded w-full mb-4"
-            />
-            <input
-              type="time"
-              value={selectedEndTime}
-              onChange={(e) => handleETime(e)}
-              className="border p-2 rounded w-full mb-4"
-            />
-            </div>
-          </div>
-          </>
         )}
 
-        {(selectedPlan === "longTerm" || selectedPlan === "monthly") && (
-          <div>
-            <h3 className="text-xl font-semibold mb-2">Select End Date</h3>
-             <div className="flex flex-col lg:flex-row items-center gap-4">
-             <input
+        {selectedPlan === 'shortTerm' && (
+          <div className="bg-white rounded-lg shadow p-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Select Time Range</h3>
+            <div className="flex gap-2">
+              <input
+                type="time"
+                value={selectedStartTime || ''}
+                onChange={(e) => dispatch(setSelectedStartTime({ sTime: e.target.value }))}
+                className="border border-gray-300 p-2 rounded-md w-full text-sm focus:ring-2 focus:ring-orange-400"
+              />
+              <input
+                type="time"
+                value={selectedEndTime || ''}
+                onChange={(e) => dispatch(setSelectedEndTime({ eTime: e.target.value }))}
+                className="border border-gray-300 p-2 rounded-md w-full text-sm focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
+          </div>
+        )}
+
+        {(selectedPlan === 'longTerm' || selectedPlan === 'monthly') && (
+          <div className="bg-white rounded-lg shadow p-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">End Date</h3>
+            <input
               type="date"
-              value={selectedEndDate}
-              onChange={(e) => handleEDate(e.target.value)}
-              className="border p-2 rounded w-full  mb-4"
+              value={selectedEndDate || ''}
+              onChange={(e) => dispatch(setSelectedEndDate({ eDate: e.target.value }))}
+              className="border border-gray-300 p-2 rounded-md w-full text-sm focus:ring-2 focus:ring-orange-400"
             />
-            </div>
           </div>
         )}
+      </div>
 
-         <div className="flex flex-col lg:flex-row mt-4 gap-4">
-          <button
-            onClick={handleConfirm}
-            className="bg-orange-500 text-white text-xl px-6 py-2 rounded font-semibold shadow hover:scale-105 transform transition"
-          >
-            Confirm Reservation
-          </button>
-          <button
-            onClick={(e) => {handleCancel(e)}}
-            className="bg-gray-400 text-white text-xl px-6 py-2 rounded font-semibold shadow hover:scale-105 transform transition"
-          >
-            Cancel
-          </button>
-        </div>
+      {/* Actions */}
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={handleConfirm}
+          className="bg-orange-500 text-white text-sm px-4 py-2 rounded-md font-medium shadow hover:scale-105 transition"
+        >
+          Confirm Reservation
+        </button>
+        <button
+          onClick={handleCancel}
+          className="bg-gray-400 text-white text-sm px-4 py-2 rounded-md font-medium shadow hover:scale-105 transition"
+        >
+          Cancel
+        </button>
+      </div>
 
-      
-        </div>
-
-          {parkingError && <div className="text-red-500 text-sm text-center">{parkingError}</div>}
-     
-        </div>
+      {parkingError && (
+        <div className="text-red-500 text-xs text-center mt-3">{parkingError}</div>
+      )}
+    </div>
   );
-}
+};
 
-export default SlotSearchHeader
+export default SlotSearchHeader;

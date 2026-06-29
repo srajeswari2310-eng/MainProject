@@ -5,6 +5,12 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import car from "../assets/car.jpg";
 import { updateUser } from "../feature/userSlice";
+import {
+  fetchVehiclesService,
+  addVehicleService,
+  updateVehicleService,
+  deleteVehicleService,
+} from "../services/user.service";
 
 const ManageVehicle = () => {
   const dispatch = useDispatch();
@@ -31,52 +37,45 @@ const ManageVehicle = () => {
   }, [currentUser]);
 
   const refreshVehicles = async () => {
-    try {
-      const res = await axiosInstance.get(`/user/${currentUser._id}`);
-      setVehicles(res.data.vehicles);
-      dispatch(updateUser({ user: res.data }));
-    } catch (err) {
-      alert(err.response?.data?.error || err.error);
-      console.error(err.message);
-    }
-  };
+  try {
+    const vehicles = await fetchVehiclesService(token, currentUser._id);
+    setVehicles(vehicles);
+    dispatch(updateUser({ user: { ...currentUser, vehicles } }));
+  } catch (error) {
+    alert(error.message);
+    console.error("Refresh Vehicles Error:", error.message);
+  }
+};
 
-  const handleAddOrUpdate = async (values, { resetForm }) => {
-    if (!values.no.trim()) return;
-    try {
-      if (!editingVehicleId) {
-        // Add new vehicle
-        const res = await axiosInstance.post(`/user/${currentUser._id}/vehicles`, { no: values.no });
-        dispatch(updateUser({ user: res.data }));
-      } else {
-        // Update existing vehicle by _id
-        const res = await axiosInstance.put(
-          `/user/${currentUser._id}/vehicles/${editingVehicleId}`,
-          { no: values.no }
-        );
-        dispatch(updateUser({ user: res.data }));
-        setEditingVehicleId(null);
-      }
-      resetForm();
-      refreshVehicles();
-    } catch (err) {
-      const msg = err.response?.data?.error || err.message;
-      alert(`Error while saving vehicle: ${msg}`);
-      console.error(err);
+const handleAddOrUpdate = async (values, { resetForm }) => {
+  if (!values.no.trim()) return;
+  try {
+    if (!editingVehicleId) {
+      const data = await addVehicleService(token, currentUser._id, values.no);
+      dispatch(updateUser({ user: data }));
+    } else {
+      const data = await updateVehicleService(token, currentUser._id, editingVehicleId, values.no);
+      dispatch(updateUser({ user: data }));
+      setEditingVehicleId(null);
     }
-  };
+    resetForm();
+    refreshVehicles();
+  } catch (error) {
+    alert(error.message);
+    console.error("Add/Update Vehicle Error:", error.message);
+  }
+};
 
-  const handleDelete = async (vehicleId) => {
-    try {
-      const res = await axiosInstance.delete(`/user/${currentUser._id}/vehicles/${vehicleId}`);
-      dispatch(updateUser({ user: res.data }));
-      refreshVehicles();
-    } catch (err) {
-      alert(err.response?.data?.error || err.error);
-      console.error(err);
-    }
-  };
-
+const handleDelete = async (vehicleId) => {
+  try {
+    const data = await deleteVehicleService(token, currentUser._id, vehicleId);
+    dispatch(updateUser({ user: data }));
+    refreshVehicles();
+  } catch (error) {
+    alert(error.message);
+    console.error("Delete Vehicle Error:", error.message);
+  }
+};
   const handleEdit = (vehicle, setFieldValue) => {
     setFieldValue("no", vehicle.no);
     setEditingVehicleId(vehicle._id);

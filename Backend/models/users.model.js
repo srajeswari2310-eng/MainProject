@@ -8,8 +8,8 @@ const vehicleSchema = new mongoose.Schema({
 // Favorite Slot Schema
 const favoriteSlotSchema = new mongoose.Schema({
   locationId: { type: mongoose.Schema.Types.ObjectId, ref: "Parking", required: true },
-  floorId: { type: Number, required: true },
-  slotId: { type: Number, required: true },
+  floorId: { type: String, required: true },
+  slotId: { type: String, required: true },
 });
 
 // Reserved Slot Schema

@@ -60,11 +60,37 @@ exports.deleteParking = async (req, res) => {
 // Add a floor to a parking location
 exports.addFloor = async (req, res) => {
   try {
-    const { name } = req.body;
     const parking = await parkingModle.findById(req.params.id);
     if (!parking) return res.status(404).json({ error: "Parking not found" });
 
-    parking.floors.push({ name, slots: [] });
+    // Calculate next floor number
+    const floorNumber = parking.floors.length + 1;
+    const floorName = `Floor ${floorNumber}`;
+
+    parking.floors.push({ name: floorName, slots: [] });
+    await parking.save();
+
+    res.json(parking);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Toggle floor availability
+exports.toggleFloorAvailability = async (req, res) => {
+  try {
+    const { parkingId, floorId } = req.params;
+
+    
+    const parking = await parkingModle.findById(parkingId);
+    if (!parking) return res.status(404).json({ error: "Parking not found" });
+
+    const floor = parking.floors.id(floorId);
+    if (!floor) return res.status(404).json({ error: "Floor not found" });
+
+    // Flip availability
+    floor.available = !floor.available;
+
     await parking.save();
     res.json(parking);
   } catch (err) {
@@ -72,11 +98,11 @@ exports.addFloor = async (req, res) => {
   }
 };
 
+
 // Add a slot to a floor
 exports.addSlot = async (req, res) => {
   try {
     const { floorId } = req.params;
-    const { slotName } = req.body;
 
     const parking = await parkingModle.findById(req.params.id);
     if (!parking) return res.status(404).json({ error: "Parking not found" });
@@ -84,13 +110,45 @@ exports.addSlot = async (req, res) => {
     const floor = parking.floors.id(floorId);
     if (!floor) return res.status(404).json({ error: "Floor not found" });
 
+    // Calculate next slot number
+    const slotNumber = floor.slots.length + 1;
+    const slotName = `Slot ${slotNumber}`;
+
+    // Push slot with auto-generated name
     floor.slots.push({ slotName });
+    await parking.save();
+
+    res.json(parking);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Add 10 slots to a floor
+exports.add10Slot = async (req, res) => {
+  try {
+    const { floorId } = req.params;
+
+    const parking = await parkingModle.findById(req.params.id);
+    if (!parking) return res.status(404).json({ error: "Parking not found" });
+
+    const floor = parking.floors.id(floorId);
+    if (!floor) return res.status(404).json({ error: "Floor not found" });
+
+    // Generate 10 slots automatically
+    const startIndex = floor.slots.length + 1;
+    for (let i = 0; i < 10; i++) {
+      const slotName = `Slot ${startIndex + i}`;
+      floor.slots.push({ slotName });
+    }
+
     await parking.save();
     res.json(parking);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 };
+
 
 // Update slot occupancy/reservation
 exports.updateSlot = async (req, res) => {
