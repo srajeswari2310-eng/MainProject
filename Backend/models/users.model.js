@@ -12,18 +12,18 @@ const favoriteSlotSchema = new mongoose.Schema({
   slotId: { type: String, required: true },
 });
 
-// Reserved Slot Schema
-const reservedSlotSchema = new mongoose.Schema({
-  locationId: { type: mongoose.Schema.Types.ObjectId, ref: "Parking", required: true },
-  floorId: { type: Number, required: true },
-  slotId: { type: Number, required: true },
-  plan: { type: String, enum: ["shortTerm", "longTerm", "monthly"], default: null },
-  startDate: { type: String, default: "" },
-  endDate: { type: String, default: "" },
-  startTime: { type: String, default: "" },
-  endTime: { type: String, default: "" },
-  userVehicleNo: { type: String, default: null },
-});
+// // Reserved Slot Schema
+// const reservedSlotSchema = new mongoose.Schema({
+//   locationId: { type: mongoose.Schema.Types.ObjectId, ref: "Parking", required: true },
+//   floorId: { type: Number, required: true },
+//   slotId: { type: Number, required: true },
+//   plan: { type: String, enum: ["shortTerm", "longTerm", "monthly"], default: null },
+//   startDate: { type: String, default: "" },
+//   endDate: { type: String, default: "" },
+//   startTime: { type: String, default: "" },
+//   endTime: { type: String, default: "" },
+//   userVehicleNo: { type: String, default: null },
+// });
 
 // User Schema
 const userSchema = new mongoose.Schema(
@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ["user", "admin"], default: "user" },
     vehicles: [vehicleSchema],
     favoriteSlot: [favoriteSlotSchema],
-    reservedSlot: [reservedSlotSchema],
+    reservedSlot: [{ type: mongoose.Schema.Types.ObjectId, ref: "Reservation"}],
   },
   { timestamps: true }
 );

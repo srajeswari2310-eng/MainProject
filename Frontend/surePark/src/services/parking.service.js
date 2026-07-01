@@ -67,3 +67,19 @@ export const toggleAvailabilityService = async (token, parkingId, floorId) => {
     );
   }
 };
+
+export const fetchParkingsByDateService = async (token, { locationId, date }) => {
+  const axiosInstance = createAxiosInstance(token);
+  try {
+    const response = await axiosInstance.get("/parking/parking/reservations", {
+      params: { locationId, date }   // 👈 query params
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      error.message ||
+      "Failed to fetch parking details by date"
+    );
+  }
+};

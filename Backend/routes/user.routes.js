@@ -54,14 +54,14 @@ router.delete("/:id/favorites",
     authorizeRoles("admin", "user"),
      userController.removeFavoriteSlot); // Remove favorite slot
 
-// Reserved Slot
-router.post("/:id/reserved", 
-      verifyToken,
-    authorizeRoles("admin", "user"),
-    userController.addReservedSlot);       // Add reserved slot
-router.delete("/:id/reserved", 
-      verifyToken,
-    authorizeRoles("admin", "user"),
-    userController.removeReservedSlot);  // Remove reserved slot
+// // Reserved Slot
+// router.post("/:id/reserved", 
+//       verifyToken,
+//     authorizeRoles("admin", "user"),
+//     userController.addReservedSlot);       // Add reserved slot
+// router.delete("/:id/reserved", 
+//       verifyToken,
+//     authorizeRoles("admin", "user"),
+//     userController.removeReservedSlot);  // Remove reserved slot
 
 module.exports = router;

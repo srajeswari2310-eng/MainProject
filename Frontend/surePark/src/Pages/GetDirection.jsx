@@ -50,7 +50,7 @@ const GetDirection = () => {
 
     // Get mall coordinates from Redux state
     if (locationId) {
-      const result = parkings.find((x) => x.locationId === locationId);
+      const result = parkings.find((x) => x._id === locationId);
       if (result) setMallLocation(result.coordinates);
     }
   }, [locationId, parkings]);

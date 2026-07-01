@@ -1,7 +1,7 @@
 // feature/parkingSlice.js
-import { createSlice } from "@reduxjs/toolkit";
-//import parkings from "../models/parking";
-//import pricingDetails from "../models/pricingDetail";
+import { createSlice, createAsyncThunk  } from "@reduxjs/toolkit";
+import { reserveSlotService } from "../services/reservation.service";
+import pricingDetails from "../models/pricing.model";
 
 // Utility to format date as YYYY-MM-DD
 const formatDate = (date) => date.toISOString().split("T")[0];
@@ -35,8 +35,8 @@ const endTime = formatTime(oneHourLater);
 
 const initialState = {
   parkings: null,
-  pircing: null,
-  selectedLocation: 1,
+  pircing: pricingDetails,
+  selectedLocation: null,
   selectedParking: null, // parking details of the location
   selectedPlan: "shortTerm",
   selectedVehicleNo: "",
@@ -53,6 +53,39 @@ const initialState = {
   isPayment: false
 }
 
+
+
+export const reserveSlotThunk = createAsyncThunk(
+  "parking/reserveSlot",
+  async ({ token, currentUser, reservationDetails }, { rejectWithValue, getState }) => {
+    try {
+      
+
+      // Build payload
+      const payload = {
+        userId: reservationDetails.userId,
+        slotId: reservationDetails.slotId,
+        floorId: reservationDetails.floorId,
+        locationId: reservationDetails.locationId,
+        plan: reservationDetails.plan,
+        startDate: reservationDetails.startDate,
+        endDate: reservationDetails.endDate,
+        startTime: reservationDetails.startTime,
+        endTime: reservationDetails.endTime,
+        userVehicleNo: reservationDetails.userVehicleNo,
+      };
+
+      const result = await reserveSlotService(token, payload);
+      return result;
+    } catch (err) {
+      return rejectWithValue(err.message || "Reservation failed");
+    }
+  }
+);
+
+
+
+
 const parkingSlice = createSlice({
   name: "parking",
   initialState,
@@ -60,39 +93,7 @@ const parkingSlice = createSlice({
     setParkings:(state, action) =>{
       const  { parking } = action.payload;
       state.parkings = parking;
-    },
-    reserveSlot: (state, action) => {
-      const { currentUser } = action.payload;
-
-      const isBooked = currentUser.reservedSlot?.find(res => res.details.vehicleNo == state.selectedVehicleNo && res.details.startDate == state.selectedStartDate);
-
-      if (isBooked) {
-        state.parkingError = "Already Reserved in Same Date";
-      } else {
-
-        if (state.selectedSlot != null) {
-          const reservD = {
-            plan: state.selectedPlan,
-            startDate: state.selectedStartDate,
-            endDate: state.selectedEndDate,
-            startTime: state.selectedStartTime,
-            endTime: state.selectedEndTime,
-            user: currentUser.Id,
-            userVehicleNo: state.selectedVehicleNo
-          };
-          state.reservationDetails = reservD;
-          state.reserved = true;
-          state.parkingError = null;
-          state.isSuccess = true;
-          state.isPayment = true;
-        } else {
-          state.parkingError = "Select Slot";
-          state.isSuccess = false;
-          state.isPayment = false;
-        }
-
-      }
-    },
+    },  
     calculatePayment: (state, action) => {
       if (state.reservationDetails) {
         if (state.reservationDetails.plan == "shortTerm") {
@@ -207,7 +208,7 @@ const parkingSlice = createSlice({
     setIntialValues: (state, action) => {
       const { currentUser } = action.payload;
       state.selectedVehicleNo = currentUser?.vehicles?.[0]?.no || "";
-      // state.selectedLocation = parkings?.[0]?.locationId || "";
+      
       state.selectedStartDate = startDate;
       state.selectedEndDate = endDate;
       state.selectedStartTime = startTime;
@@ -215,7 +216,7 @@ const parkingSlice = createSlice({
       state.selectedPlan = "shortTerm";
       state.selectedSlot = null;
       state.parkingError = null;
-      console.log(state.parkings)
+     
     },
     setSelectedLocation: (state, action) => {
       const { id } = action.payload;
@@ -234,8 +235,10 @@ const parkingSlice = createSlice({
       const { plan } = action.payload;
       state.selectedPlan = plan;
       if (state.selectedPlan == "monthly") {
+        state.selectedStartDate = startDate;
         state.selectedEndDate = endMonth;
       } else {
+         state.selectedStartDate = startDate;
         state.selectedEndDate = endDate;
       }
     },
@@ -310,6 +313,25 @@ const parkingSlice = createSlice({
     }
 
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(reserveSlotThunk.pending, (state) => {
+        state.parkingError = null;
+        state.isSuccess = false;
+        state.isPayment = false;
+      })
+      .addCase(reserveSlotThunk.fulfilled, (state, action) => {
+        state.reservationDetails = action.payload;
+        state.isSuccess = true;
+        state.isPayment = true;
+        state.parkingError = null;
+      })
+      .addCase(reserveSlotThunk.rejected, (state, action) => {        
+       state.parkingError = action.payload;
+        state.isSuccess = false;
+        state.isPayment = false;
+      });
+  },
 });
 
 export const { setParkings, reserveSlot, removeReservation, setSelectedLocation, setSelectedParking, setIntialValues, setSelectedVehicleNo,
@@ -321,6 +343,9 @@ export const { setParkings, reserveSlot, removeReservation, setSelectedLocation,
 
 
 export default parkingSlice.reducer;
+
+//function getStartDate()
+
 function getTimeDiff(startTime, endTime) {
   const parseTime = (t) => {
     const [h, m] = t.split(":").map(Number);

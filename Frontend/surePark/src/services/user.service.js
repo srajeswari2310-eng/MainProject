@@ -144,11 +144,11 @@ export const addFavoriteService = async (token, userId, slotId, floorId, locatio
 };
 
 // Remove a favorite slot
-export const removeFavoriteService = async (slotId, floorId, locationId) => {
+export const removeFavoriteService = async (token, userId, slotId, floorId, locationId) => {
   try {
      const axiosInstance = createAxiosInstance(token);
-    const response = await axiosInstance.delete(`/favorites/${slotId}`, {
-      data: { floorId, locationId },
+    const response = await axiosInstance.delete(`/user/${userId}/favorites`, {
+      data: { slotId },
     });
     return response.data;
   } catch (error) {

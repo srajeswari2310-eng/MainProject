@@ -140,7 +140,7 @@ const UserProfile = () => {
               <ul className="list-disc ml-6 text-gray-700 space-y-1">
                 {user.favoriteSlot.map((slot, i) => (
                   <li key={i}>
-                    {slot.name} — Floor {slot.name}, Slot {slot.name}
+                    {slot.location} — {slot.floor.name}, {slot.slot.slotName}
                   </li>
                 ))}
               </ul>

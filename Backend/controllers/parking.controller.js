@@ -1,4 +1,7 @@
 const parkingModle = require("../models/parking.model");
+const reservationModel = require("../models/reservation.model");
+const Parking = require("../models/parking.model");
+
 
 // Create a new parking location
 exports.createParking = async (req, res) => {
@@ -81,7 +84,7 @@ exports.toggleFloorAvailability = async (req, res) => {
   try {
     const { parkingId, floorId } = req.params;
 
-    
+
     const parking = await parkingModle.findById(parkingId);
     if (!parking) return res.status(404).json({ error: "Parking not found" });
 
@@ -172,3 +175,86 @@ exports.updateSlot = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
+// Get Parking + Reservation Details with isReserved flag
+
+
+
+exports.getParkingWithReservations = async (req, res) => {
+  try {
+    const { locationId, date } = req.query; // ✅ use query params for GET
+    const targetDate = new Date(date);
+
+    let parking;
+    
+       parking = await Parking.find()
+        .populate({
+          path: "floors.slots.reservedDetail",
+          model: "Reservation",
+          populate: { path: "userId", select: "name email" }
+        });
+
+    // 1. Find Parking by locationId or all
+    // if (locationId) {
+    //   parking = await Parking.findById(locationId)
+    //     .populate({
+    //       path: "floors.slots.reservedDetail",
+    //       model: "Reservation",
+    //       populate: { path: "userId", select: "name email" } // deep populate user
+    //     });
+    // } else {
+    //   parking = await Parking.find()
+    //     .populate({
+    //       path: "floors.slots.reservedDetail",
+    //       model: "Reservation",
+    //       populate: { path: "userId", select: "name email" }
+    //     });
+    // }
+
+    if (!parking || (Array.isArray(parking) && parking.length === 0)) {
+      return res.status(404).json({ success: false, message: "Parking not found" });
+    }
+
+    // 2. Find Reservations for that location on given date
+    const reservationQuery = {
+      startDate: { $lte: targetDate },
+      endDate: { $gte: targetDate },
+    };
+    if (locationId) reservationQuery.locationId = locationId;
+
+    const reservations = await reservationModel.find(reservationQuery)
+      .populate("userId", "name email");
+
+    // 3. Add reserved flag to slots
+    const markReserved = (parkingDoc) => {
+      parkingDoc.floors.forEach((floor) => {
+        floor.slots.forEach((slot) => {
+          // ✅ check if any reservation covers the target date
+          const reservedForDate = reservations.some(
+            (r) =>
+              r.slotId.toString() === slot._id.toString() &&
+              targetDate >= r.startDate &&
+              targetDate <= r.endDate
+          );
+          slot.reserved = reservedForDate; // ✅ use correct schema field
+        });
+      });
+    };
+
+    if (Array.isArray(parking)) {
+      parking.forEach(markReserved);
+    } else {
+      markReserved(parking);
+    }
+
+    return res.status(200).json({
+      success: true,
+      parking,
+      reservations,
+    });
+  } catch (err) {
+    console.error("Error fetching parking/reservations:", err.message);
+    res.status(500).json({ success: false, message: "Server error during fetch" });
+  }
+};
+

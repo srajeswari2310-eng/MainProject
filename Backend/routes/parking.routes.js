@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const parkingController = require("../controllers/parking.controller");
+const reservationController = require('../controllers/reservation.controller');
 
 const verifyToken = require("../middleware/auth.middleware");
 const authorizeRoles = require("../middleware/role.Middleware");
@@ -56,6 +57,22 @@ router.put("/:id/floors/:floorId/slots/:slotId",
      verifyToken,
      authorizeRoles("admin", "user"),
      parkingController.updateSlot);
+
+
+     // GET route: parking details + reservations for a date
+router.get("/parking/reservations", 
+     verifyToken,
+     authorizeRoles("admin", "user"),
+     parkingController.getParkingWithReservations);
+router.post("/reserve",
+     verifyToken,
+     authorizeRoles("admin", "user"),
+     reservationController.reserveSlot);
+
+router.delete("/parking/reserve",
+     verifyToken,
+     authorizeRoles("admin", "user"),
+     reservationController.removeReservation);
 
 module.exports = router;
 

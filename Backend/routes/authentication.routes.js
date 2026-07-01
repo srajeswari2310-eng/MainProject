@@ -2,7 +2,7 @@ const express = require('express');
 
 const router = express.Router();
 
-const { registerUser, loginUser, forgotPassword, resetPassword } = require('../controllers/authentication.controller');
+const { registerUser, loginUser, forgotPassword, resetPassword, generateOtp } = require('../controllers/authentication.controller');
 
 router.post("/register", registerUser);
 

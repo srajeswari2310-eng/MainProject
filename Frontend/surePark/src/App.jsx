@@ -1,4 +1,5 @@
 import React from 'react'
+import { ToastContainer, toast } from 'react-toastify';
 import {createBrowserRouter, RouterProvider } from 'react-router-dom'
 import {  useSelector } from "react-redux";
 import './App.css'
@@ -20,6 +21,8 @@ import ManageVehicle from './Pages/ManageVehicle';
 import { User } from 'lucide-react';
 import ManageLot from './Pages/ManageLot';
 import ParkingLot from './Pages/ParkingLot';
+import PaymentPage from './Pages/PaymentPage'
+import GetDirection from './Pages/GetDirection'
 
 const router = createBrowserRouter([
   {
@@ -93,6 +96,20 @@ const router = createBrowserRouter([
           <ParkingLot/>
         </UserRoute>
 
+      },
+      {
+        path: "/payment",
+        element: <UserRoute>
+          <PaymentPage/>
+        </UserRoute>
+
+      },
+      {
+        path: "/direction",
+        element: <UserRoute>
+          <GetDirection/>
+        </UserRoute>
+
       }
     ],
   }
@@ -101,7 +118,11 @@ const router = createBrowserRouter([
 const App = () => {
  
   return (
-   <RouterProvider router={router} />
+    <>
+    <RouterProvider router={router} />
+    <ToastContainer position="top-right" autoClose={3000} />
+    </>
+   
   )
 }
 

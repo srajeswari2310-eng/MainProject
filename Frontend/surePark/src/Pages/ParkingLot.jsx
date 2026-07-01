@@ -16,7 +16,7 @@ const ParkingLot = () => {
 
     dispatch(calculatePayment());
 
-      navigate("/home/payment");
+      navigate("/payment");
     
   }
 

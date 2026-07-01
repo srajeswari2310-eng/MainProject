@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from "react-toastify";
 import axios from 'axios';
 import {
   reserveSlot,
@@ -14,8 +15,10 @@ import {
   setSelectedStartDate,
   setSelectedStartTime,
   setSelectedVehicleNo,
+  reserveSlotThunk,
   setParkings
 } from '../feature/parkingSlice';
+import { fetchParkingsByDateService, fetchParkingsService } from "../services/parking.service";
 
 const SlotSearchHeader = ({ onReserve }) => {
   const dispatch = useDispatch();
@@ -25,6 +28,7 @@ const SlotSearchHeader = ({ onReserve }) => {
     selectedLocation,
     selectedParking,
     selectedVehicleNo,
+    selectedSlot,
     selectedPlan,
     selectedStartDate,
     selectedEndDate,
@@ -34,59 +38,79 @@ const SlotSearchHeader = ({ onReserve }) => {
     isSuccess
   } = useSelector((state) => state.parking);
 
-  const axiosInstance = axios.create({
-    baseURL: "http://localhost:4000",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-
-  // Fetch parking data from API
-  useEffect(() => {
-    const fetchParkings = async () => {
-      try {
-        const res = await axiosInstance.get('/parking');
-        if (Array.isArray(res.data)) {
-          dispatch(setParkings({ parking: res.data }));
-          if (res.data.length > 0) {
-            dispatch(setSelectedLocation({ id: res.data[0]._id }));
-            // dispatch(setSelectedParking({ selectParking: res.data[0]._id }));
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching parkings:', err.message);
-      }
-    };
-    fetchParkings();
-  }, []);
-
-  const handleConfirm = (e) => {
-    e.preventDefault();
-    dispatch(reserveSlot({ currentUser }));
-  };
-
-  const handleCancel = (e) => {
-    e.preventDefault();
-    dispatch(reset({ currentUser }));
-  };
-
+   // Initialize values when user changes
   useEffect(() => {
     if (currentUser) {
       dispatch(setIntialValues({ currentUser }));
     }
   }, [currentUser, dispatch]);
 
-
+  // Fetch parkings whenever location or date changes
   useEffect(() => {
-    // if (selectedLocation) {
-    //   dispatch(setSelectedParking({ location: selectedLocation }));
-    // }
-    console.log(selectedLocation)
-    console.log(selectedParking)
+    const fetchParkings = async () => {
+      if (!selectedStartDate) return; // only fetch when a date is chosen
+      try {
+        const data = await fetchParkingsByDateService(token, {
+          locationId: selectedLocation,
+          date: selectedStartDate,
+        });
 
+        if (Array.isArray(data.parking)) {
+          dispatch(setParkings({ parking: data.parking }));
+          // auto-select first location if none chosen
+          if (!selectedLocation && data.parking.length > 0) {
+            dispatch(setSelectedLocation({ id: data.parking[0]._id }));
+          }
+          else{
+            const selectPark = data.parking.find(x => x._id == selectedLocation);
+            dispatch(setSelectedParking({selectParking: selectPark}))
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching parkings:", error.message);
+      }
+    };
+
+    fetchParkings();
+  }, [token, selectedLocation, selectedStartDate, dispatch]);
+
+  //  Confirm reservation
+  const handleConfirm = (e) => {
+    e.preventDefault();
+    if (!selectedSlot) {
+      toast.error("Select Slot to Book");
+      return;
+    }
+
+    const reservationDetails = {
+      userId: currentUser._id,
+      slotId: selectedSlot.slotId,
+      floorId: selectedSlot.floorId,
+      locationId: selectedLocation,
+      plan: selectedPlan,
+      startDate: selectedStartDate,
+      endDate: selectedEndDate,
+      startTime: selectedStartTime,
+      endTime: selectedEndTime,
+      userVehicleNo: selectedVehicleNo,
+    };
+
+    dispatch(reserveSlotThunk({ currentUser, reservationDetails }));
+  };
+
+  // Cancel reservation
+  const handleCancel = (e) => {
+    e.preventDefault();
+    dispatch(reset({ currentUser }));
+  };
+
+  // Handle success
+  useEffect(() => {
+    console.log(parkingError)
     if (isSuccess) {
       onReserve();
     }
-  }, [selectedLocation, selectedVehicleNo, parkingError, isSuccess, currentUser, dispatch, onReserve, selectedParking]);
-
+  }, [isSuccess, onReserve, selectedParking, parkingError]);
 
   return (
     <div className="w-full md:w-[85%] bg-gradient-to-r from-orange-50 via-pink-50 to-teal-50 rounded-xl mx-auto px-6 py-6 mt-6 mb-6 shadow-md">

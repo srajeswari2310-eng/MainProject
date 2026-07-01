@@ -26,7 +26,9 @@ const ParkingLotCard = ({
   const [isSelected, setIsSelected] = useState(false);
 
   const handleSelectSlot = (slotDetails) => {
-    onSelectSlot({ slot: slotDetails, floorid: floorId });
+    if(!slotDetails.reserved || !slotDetails.occupied){
+    onSelectSlot({ slot: slotDetails, floorid: floorId, location: locationId });
+    }
   };
 
  const handleAddFavorite = (data) => {
@@ -46,20 +48,21 @@ const ParkingLotCard = ({
     : null;
 
   useEffect(() => {
+    
     if (currentUser) {
       const fav = currentUser?.favoriteSlot?.find(
         (x) =>
           x.locationId === locationId &&
-          x.floorId === floorId &&
-          slotDetails._id === x.slotId
+          x.floor._id === floorId &&
+          slotDetails._id === x.slot._id
       );
       setIsFav(!!fav);
     }
 
-    const isReserve = slotDetails?.reservedDetail?.find(
-      (x) => x.startDate === startDate
-    );
-    setIsReserved(!!isReserve);
+    // const isReserve = slotDetails?.reservedDetail?.find(
+    //   (x) => x.startDate === startDate
+    // );
+    // setIsReserved(!!isReserve);
 
     if (selectedSlot != null) {
       const isSlot =
@@ -81,58 +84,63 @@ const ParkingLotCard = ({
       : greenCar;
 
   return (
-    <div className="relative inline-block">
-      {/* Card */}
-      <div
-        className="relative w-40 h-28 rounded-lg shadow-md overflow-hidden cursor-pointer group hover:shadow-lg transition"
-        onClick={() => handleSelectSlot(slotDetails)}
-      >
-        {/* Car Image */}
-        <img
-          src={carImage}
-          alt="Car status"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+  <div className="relative inline-block w-32 sm:w-36 md:w-40 lg:w-40">
+  {/* Card */}
+  <div
+    className="relative h-22 sm:h-24 md:h-26 lg:h-28 rounded-lg shadow-md overflow-hidden cursor-pointer group hover:shadow-lg transition"
+    onClick={() => handleSelectSlot(slotDetails)}
+  >
+    {/* Car Image */}
+    <img
+      src={carImage}
+      alt="Car status"
+      className="absolute inset-0 w-full h-full object-cover"
+    />
 
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition"></div>
+    {/* Overlay */}
+    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition"></div>
 
-        {/* Content */}
-        <div className="relative z-10 flex flex-col items-center justify-center h-full text-white text-center">
-          {floorName && (
-            <h3 className="text-[10px] font-medium">{floorName}</h3>
-          )}
-          <h3 className="text-sm font-semibold">{slotDetails.slotName}</h3>
+    {/* Content */}
+    <div className="relative z-10 flex flex-col items-center justify-center h-full text-white text-center px-1">
+      {floorName && (
+        <h3 className="text-[10px] sm:text-xs md:text-sm font-medium truncate">
+          {floorName}
+        </h3>
+      )}
+      <h3 className="text-xs sm:text-sm md:text-base font-semibold truncate">
+        {slotDetails.slotName}
+      </h3>
 
-          {/* Tooltip */}
-          {slotDetails.occupied && (
-            <div className="absolute -top-6 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">
-              {maskedVehicleNo}
-            </div>
-          )}
+      {/* Tooltip */}
+      {slotDetails.occupied && (
+        <div className="absolute -top-6 bg-black text-white text-[10px] sm:text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition">
+          {maskedVehicleNo}
         </div>
-      </div>
-
-      {/* Favorite Button OUTSIDE card */}
-      {currentUser.role === "user" && (
-        <button
-          type="button"
-          className={`absolute -top-2 -right-2 flex items-center justify-center 
-            w-8 h-8 rounded-full shadow-md transition 
-            ${isFav ? "bg-red-500 text-white" : "bg-gray-200 text-gray-500"}
-            hover:bg-red-400 hover:text-white active:scale-95`}
-          onClick={() =>
-            handleAddFavorite({
-              slotId: slotDetails._id,
-              floorId: floorId,
-              locationId: locationId,
-            })
-          }
-        >
-          <FaHeart className="text-lg" />
-        </button>
       )}
     </div>
+  </div>
+
+  {/* Favorite Button OUTSIDE card */}
+  {currentUser?.role === "user" && (
+    <button
+      type="button"
+      className={`absolute -top-2 -right-2 flex items-center justify-center 
+        w-7 h-7 sm:w-8 sm:h-8 rounded-full shadow-md transition 
+        ${isFav ? "bg-red-500 text-white" : "bg-gray-200 text-gray-500"}
+        hover:bg-red-400 hover:text-white active:scale-95`}
+      onClick={() =>
+        handleAddFavorite({
+          slotId: slotDetails._id,
+          floorId: floorId,
+          locationId: locationId,
+        })
+      }
+    >
+      <FaHeart className="text-sm sm:text-lg" />
+    </button>
+  )}
+</div>
+
   );
 };
 

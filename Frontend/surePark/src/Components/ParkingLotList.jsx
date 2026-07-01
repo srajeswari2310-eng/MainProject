@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ParkingLotCard from "../Components/ParkingLotCard";
 import { setSelectedSlot } from "../feature/parkingSlice";
-import { handleFav } from "../feature/userSlice";
+import { handleFav, updateUser } from "../feature/userSlice";
 import MapComponent from "./MapComponent";
+import { removeFavoriteService , addFavoriteService} from "../services/user.service";
 
 const ParkingLotList = () => {
   const dispatch = useDispatch();
@@ -22,29 +23,20 @@ const ParkingLotList = () => {
   }
 
   const handleSelectSlot = (data) => {
-    if (!data.slot.occupied) {
+    if (!data.slot.occupied && !data.slot.reserved) {
       dispatch(setSelectedSlot({ floorId: data.floorid, slotId: data.slot._id }));
     }
   };
 
   const handleAddFavorite = async (data) => {
-    // dispatch(
-    //   handleFav({
-    //     slotId: data.slotId,
-    //     floorId: data.floorId,
-    //     locationId: data.locationId,
-    //   })
-    // );
-
     try {        
-    
-        if (!data.isFav) {
-          await removeFavoriteService(data.slotId, data.floorId, data.locationId);
-          setIsFav(false);
+     if (!data.isFav) {
+          const res = await removeFavoriteService(token, currentUser._id,data.slotId, data.floorId, data.locationId);
+            dispatch(updateUser({ user: res }));
         } else {
-          const res = await addFavoriteService(token, currentUser._id, slotId, floorId, locationId);
-          dispatch(updateUser({ user: res.data }));
-          setIsFav(true);
+          const res = await addFavoriteService(token, currentUser._id, data.slotId, data.floorId, data.locationId);
+          console.log(res);
+          dispatch(updateUser({ user: res }));
         }
       } catch (error) {
         console.error("Favorite toggle failed:", error.message);
@@ -78,7 +70,7 @@ const ParkingLotList = () => {
             {floor.name}
           </button>
         ))}
-        {currentUser.role === "user" && (
+        {currentUser?.role === "user" && (
           <button
             onClick={() => setActiveTab("favorites")}
             className={`px-4 py-1.5 rounded-md text-sm font-medium shadow-sm transition 
@@ -95,7 +87,7 @@ const ParkingLotList = () => {
       <div className="flex flex-col lg:flex-row gap-8">
   {/* Slot Grid */}
     <div className="flex-1">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {activeTab === "floor" &&
               activeFloorObj.slots.map((slot) => (
                 <ParkingLotCard
@@ -111,29 +103,28 @@ const ParkingLotList = () => {
                 />
               ))}
 
-            {activeTab === "favorites" &&
-              currentUser.favoriteSlot.map((fav, index) => {
-                if (fav.locationId !== selectedParking._id) return null;
-                const floor = selectedParking.floors.find((f) => f._id === fav.floorId);
-                if (!floor) return null;
-                const slot = floor.slots.find((s) => s._id === fav.slotId);
-                if (!slot) return null;
+          {activeTab === "favorites" &&
+  currentUser.favoriteSlot.map((fav, index) => {
+    // Ensure the favorite belongs to the currently selected parking
+    if (fav.locationId.toString() !== selectedParking._id.toString()) return null;
 
-                return (
-                  <ParkingLotCard
-                    key={`${fav.locationId}-${fav.slotId}-${index}`}
-                    floorId={floor._id}
-                    slotDetails={slot}
-                    currentUser={currentUser}
-                    userVehicleNo={slot.userVehicleNo}
-                    onSelectSlot={handleSelectSlot}
-                    locationId={selectedParking._id}
-                    onAddFavorite={handleAddFavorite}
-                    startDate={selectedStartDate}
-                    floorName={floor.name}
-                  />
-                );
-              })}
+    return (
+      <ParkingLotCard
+        key={`${fav.locationId}-${fav.slot._id}-${index}`}
+        floorId={fav.floor._id}             // ✅ floor id
+        slotDetails={fav.slot}              // ✅ slot object with id + slotName
+        currentUser={currentUser}
+        userVehicleNo={fav.slot.userVehicleNo}
+        onSelectSlot={handleSelectSlot}
+        locationId={fav.locationId}         // ✅ location id
+        onAddFavorite={handleAddFavorite}
+        startDate={selectedStartDate}
+        floorName={fav.floor.name}          // ✅ floor name
+        locationName={fav.location}         // ✅ location name
+      />
+    );
+  })}
+
           </div>
         </div>
 

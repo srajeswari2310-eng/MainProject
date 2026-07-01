@@ -1,9 +1,11 @@
 import React from 'react'
 import hero_vid from '../assets/hero_vedio.mp4'
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from "react-router-dom";
 
 const Hero = () => {
   // Get user info from Redux store
+  const navigate = useNavigate();
   const { currentUser } =  useSelector((state) => state.user);
   return (
    
@@ -36,12 +38,12 @@ const Hero = () => {
         { currentUser.role =="user" && (
 
         <div className="mt-8 flex justify-center gap-4">
-          <a
-            className="bg-orange-500 text-white px-20 py-3 rounded-4xl font-semibold shadow hover:scale-105 transform transition"
-            href="home/parking"
-          >
-            Get Started
-          </a>
+           <button
+      className="bg-orange-500 text-white px-20 py-3 rounded-3xl font-semibold shadow hover:scale-105 transform transition"
+      onClick={() => navigate("/parking")}
+    >
+      Get Started
+    </button>
          
         </div>
         )
